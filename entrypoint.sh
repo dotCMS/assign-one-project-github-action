@@ -98,8 +98,7 @@ find_project_id_print() {
 
   echo "_ORG_NAME: ${_ORG_NAME}
 _ENDPOINT: ${_ENDPOINT}
-_NEXT_URL: ${_NEXT_URL}
-  "
+_NEXT_URL: ${_NEXT_URL}"
 
   while : ; do
 
@@ -107,7 +106,7 @@ _NEXT_URL: ${_NEXT_URL}
             -H 'Accept: application/vnd.github.inertia-preview+json' \
             -D /tmp/headers \
             "$_NEXT_URL")
-    echo "_PROJECTS: ${_PROJECTS}" | jq
+    echo "_PROJECTS: ${_PROJECTS}"
 
     _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
     _NEXT_URL=$(get_next_url_from_headers '/tmp/headers')
