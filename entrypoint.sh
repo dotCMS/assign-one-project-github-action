@@ -116,7 +116,7 @@ if [ -z "$INITIAL_COLUMN_NAME" ]; then
 fi
 
 echo "find_project_id \"$PROJECT_TYPE\" \"$PROJECT_URL\""
-echo "$(find_project_id \"$PROJECT_TYPE\" \"$PROJECT_URL\")"
+find_project_id "$PROJECT_TYPE" "$PROJECT_URL"
 PROJECT_ID=$(find_project_id "$PROJECT_TYPE" "$PROJECT_URL")
 echo "find_column_id \"$PROJECT_ID\" \"${INITIAL_COLUMN_NAME:?<Error> required this environment variable}\""
 find_column_id "$PROJECT_ID" "${INITIAL_COLUMN_NAME:?<Error> required this environment variable}"
