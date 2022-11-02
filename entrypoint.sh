@@ -74,6 +74,53 @@ find_project_id() {
   unset _PROJECT_TYPE _PROJECT_URL _ORG_NAME _USER_NAME _ENDPOINT _PROJECTS _PROJECTID _NEXT_URL
 }
 
+find_project_id_print() {
+  _PROJECT_TYPE="$1"
+  _PROJECT_URL="$2"
+
+  echo "args $1 $2"
+
+  case "$_PROJECT_TYPE" in
+    org)
+      _ORG_NAME=$(echo "$_PROJECT_URL" | sed -e 's@https://github.com/orgs/\([^/]\+\)/projects/[0-9]\+@\1@')
+      _ENDPOINT="https://api.github.com/orgs/$_ORG_NAME/projects?per_page=100"
+      ;;
+    user)
+      _USER_NAME=$(echo "$_PROJECT_URL" | sed -e 's@https://github.com/users/\([^/]\+\)/projects/[0-9]\+@\1@')
+      _ENDPOINT="https://api.github.com/users/$_USER_NAME/projects?per_page=100"
+      ;;
+    repo)
+      _ENDPOINT="https://api.github.com/repos/$GITHUB_REPOSITORY/projects?per_page=100"
+      ;;
+  esac
+
+  _NEXT_URL="$_ENDPOINT"
+
+  echo "_ORG_NAME: ${_ORG_NAME}
+_ENDPOINT: ${_ENDPOINT}
+_NEXT_URL: ${_NEXT_URL}
+  "
+
+  while : ; do
+
+    _PROJECTS=$(curl -s -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
+            -H 'Accept: application/vnd.github.inertia-preview+json' \
+            -D /tmp/headers \
+            "$_NEXT_URL")
+    echo "_PROJECTS: ${_PROJECTS}" | jq
+
+    _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
+    _NEXT_URL=$(get_next_url_from_headers '/tmp/headers')
+
+    if [ "$_PROJECTID" != "" ]; then
+      echo "$_PROJECTID"
+    elif [ "$_NEXT_URL" == "" ]; then
+      echo "No project was found." >&2
+      exit 1
+    fi
+  done
+}
+
 find_column_id() {
   _PROJECT_ID="$1"
   _INITIAL_COLUMN_NAME="$2"
@@ -116,7 +163,7 @@ if [ -z "$INITIAL_COLUMN_NAME" ]; then
 fi
 
 echo "find_project_id \"$PROJECT_TYPE\" \"$PROJECT_URL\""
-find_project_id "$PROJECT_TYPE" "$PROJECT_URL"
+find_project_id_print "$PROJECT_TYPE" "$PROJECT_URL"
 PROJECT_ID=$(find_project_id "$PROJECT_TYPE" "$PROJECT_URL")
 echo "find_column_id \"$PROJECT_ID\" \"${INITIAL_COLUMN_NAME:?<Error> required this environment variable}\""
 find_column_id "$PROJECT_ID" "${INITIAL_COLUMN_NAME:?<Error> required this environment variable}"
